@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-'''
-Created on Wed Sep 29 17:44:48 2021
-
-@author: Coralie
-'''
-
 # coding=utf-8
 import sys
 import os
@@ -25,28 +18,21 @@ from math import ceil, floor
 import shutil
 import pyxid2
 
-def get_stim_info(file_name, folder):
-# read stimulus information stored in same folder as file_name, with a .txt extension
-# returns a list of values    
-    info_file_name = os.path.join(folder, os.path.splitext(file_name)[0]+'.txt')
-    info = []
-    with open(info_file_name,'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            info.append(row)
-    return info
-    
-def generate_trial_files(condition = 'rise', subject_number=1, n_blocks=3, n_stims=400, n_stims_total=1200, deviant_proportion=0.2, initial_standard=10, minimum_standard = 1):
+def generate_trial_files(condition = 'music', subject_number=1, n_blocks=3, n_stims=400, n_stims_total=1200, deviant_proportion=0.2, initial_standard=10, minimum_standard = 1):
 # generates n_block trial files per subject
 # each block contains n_stim trials, randomized from folder which name is inferred from subject_number
 # returns an array of n_block file names
 
     condition_folder = PARAMS[condition]['folder']
 
-    # glob all deviant files in stim folder
-    deviant_folder = root_path+'/sounds/%s/subj%d'%(condition_folder,subject_number)
-    deviant_files = ['sounds/%s/subj%d/'%(condition_folder,subject_number)+os.path.basename(x) for x in glob.glob(deviant_folder+'/*.wav')]
-    n_deviants = len(deviant_files) # normally 3 (neutral, smile, rough)
+    # glob all deviants and all standards files in stim folder
+    stim_folder = root_path+'/sounds/%s'%(condition_folder)
+
+    deviant_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim+'/*_rough.wav')]
+    n_deviants = len(deviant_files) 
+
+    standard_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim+'/*_neutral.wav')]
+    n_standards = len(standard_files) 
 
     # generate list of deviants containing of n_total_stims * deviant_proportion stims
     if (n_stims_total * deviant_proportion < n_deviants): # if we need less deviant than n_deviant, do nothing 
@@ -55,20 +41,27 @@ def generate_trial_files(condition = 'rise', subject_number=1, n_blocks=3, n_sti
         deviant_file_list = deviant_files * (floor(n_stims_total* deviant_proportion/ n_deviants))
     random.shuffle(deviant_file_list)
     
-    # generate list of trials, with the constraint that each deviant is preceded by at least "minimum_standard" standards
-    standard_file = 'sounds/%s/standard.wav'%condition_folder
-    stim_list = [ [standard_file,dev] for dev in deviant_file_list ] 
+    # generate list of standards of same size as deviant_list
+    if (len(deviant_file_list) < n_standards): # if we need less standard than in deviant_file_list, take first n 
+        standard_file_list = standard_files[:len(deviant_file_list)]
+    else: # duplicate the nb of standards
+        standard_file_list = standard_files * (floor(len(deviant_file_list)/ n_standards))
+    random.shuffle(standard_file_list)
+    
+    # generate list of trials, with the constraint that each deviant is preceded by at least one standard
+
+    stim_list = [ [std,dev] for std,dev in zip(standard_file_list,deviant_file_list) ] 
    
     # add the rest of standards (with the exception of the first initial_standards, to be added later)
     n_trials_so_far = len([trial for trial_pair in stim_list for trial in trial_pair])
     if (n_stims_total > n_trials_so_far + initial_standard): 
-        stim_list += [ [standard_file] ]  * (n_stims_total - n_trials_so_far - initial_standard) 
+        stim_list += [ [std] for std in standard_file_list[:n_stims_total - n_trials_so_far - initial_standard] ] 
    
     # shuffle and flatten 
     random.shuffle(stim_list)
     
     # add beginning initial_standards
-    stim_list = [ [standard_file] ]*initial_standard + stim_list
+    stim_list = [ [std] for std in standard_file_list[:initial_standard] ] + stim_list
     stim_list = [trial for trial_pair in stim_list for trial in trial_pair]
     
     # write trials by blocks of n_stims
@@ -162,96 +155,31 @@ def play_sound(sound):
         continue 
 
 
-import numpy as np
-def convert_marker_code_to_lines (marker_code, separate_digits = False):
-
-    LINES = np.array([2,1,5,4])
-    lines = []
-    if not separate_digits: 
-        # convert digit in 4-bit word
-        digit_binary = [int(digit) for digit in "{:04b}".format(marker_code)] # ex. 9 -> [1,0,0,1]
-        print(digit_binary)
-        activated_lines = LINES[np.nonzero(digit_binary)[0]] # activate lines for which bit is non null
-        print(activated_lines)
-        lines.append(list(activated_lines))
-    
-    else: 
-        # convert deviant_number to a list of 4 digits (ex. 12 -> [0,0,1,2]) 
-        digits_decimal = [int(digit) for digit in "{:04d}".format(marker_code)]
-        for digit in digits_decimal: 
-            # convert digit in 4-bit word
-            digit_binary = [int(d) for d in "{:04b}".format(digit)] # ex. 9 -> [1,0,0,1]
-            activated_lines = LINES[np.nonzero(a)[0]] # activate lines for which bit is non null
-            lines.append(list(activated_lines))
-
-    return lines
-
-def send_marker(device, marker_code):
-
-    # (if Laura is correct) markers are coded as 4-bit binary words, correspondind to lines [2,1,5,4]
-    # eg. number 1 = binary 0001 = send 1 to line 4
-    # eg. number 3 = binary 0011 = send 1 to line 4 and 1 to line 5
-    # eg. number 8 = binary 1000 = send 1 to line 2, etc. 
-    print('marker: %s '%marker_code,end='')
-
-    activated_lines = convert_marker_code_to_lines(marker_code, separate_digits=False) 
-
-    for lines in activated_lines:
-        print(lines, end=' ')
-        device.activate_line(lines=lines) #10 
-        core.wait(0.005) # wait a short while before we activate another line, if any
-
-
-
 ###########################################################################################
 ###      DEFINE HOW MANY TRIALS IN HOW MANY BLOCKS 
 ###      
 ###########################################################################################
 
-root_path = './' #D:/WORKPOSTDOC/own-name-NSR/experiment/'
+root_path = './' 
 N_STIMS_TOTAL = 1200 # total nb of stimuli (dev + std)
 DEVIANT_PROPORTION = 0.2
 N_BLOCKS = 1
 ISI = .6 # in sec
 JITTER = .05 # in sec.
-SEND_MARKERS = True
 
-RISE_PARAMS = {'condition':'rise',
+VOICE_PARAMS = {'condition':'voice',
                'fixation_cross_color':'deepskyblue',
-               'folder':'rise',
-               'deviants' : ['neutral','rise','fall'],
-               'markers_codes': {'block_begin':11,
-                                  'standard':1,
-                                  'neutral':2,
-                                  'rise':3,
-                                  'fall':4}
-                }
+               'folder':'voice'}
 
-SMILE_PARAMS = {'condition':'smile',
-                'fixation_cross_color':'green',
-                'folder':'smile',
-                'deviants' : ['neutral','smile','rough'],
-                'markers_codes': {'block_begin':11,
-                                  'standard':1,
-                                  'neutral':2,
-                                  'smile':3,
-                                  'rough':4}
-                }
+MUSIC_PARAMS = {'condition':'music',
+               'fixation_cross_color':'green',
+               'folder':'music'}
 
-PARAMS = {'rise':RISE_PARAMS,
-            'smile':SMILE_PARAMS}
+PARAMS = {'voice':VOICE_PARAMS,
+            'music':MUSIC_PARAMS}
 
 ###########################################################################################
 
-# for EEG
-if(SEND_MARKERS):
-    #stim_tracker = 0    
-    stim_tracker = pyxid2.get_xid_devices()[0]
-    print(stim_tracker)
-    stim_tracker.reset_base_timer()
-    stim_tracker.reset_rt_timer()    
-    stim_tracker.set_pulse_duration(5) # 5ms
-    
 
 # get participant nb, age, sex 
 subject_info = {u'number':1, u'name':'Bobby', u'age':20, u'sex': u'f/m', u'handedness':'right', u'condition': u'smile/rise'}
@@ -272,11 +200,6 @@ time = core.Clock()
 if not condition in PARAMS:
     raise AssertionError("Can't find condition: "+condition)
 params = PARAMS[condition]
-
-# check if stimulus folder exists
-stimulus_folder = root_path + 'sounds/%s/subj%s/'%(params['folder'],subject_number)
-if not os.path.exists(stimulus_folder):
-    raise AssertionError("Can't find stimulus folder %s for subj %s: "%(stimulus_folder,subject_number))
 
 # create psychopy black window where to show instructions
 win = visual.Window(np.array([1920,1080]),fullscr=False,color='black', units='norm')
@@ -300,28 +223,16 @@ for block_count, trial_file in enumerate(trial_files):
     show_fixation_cross(message='+', color=params['fixation_cross_color'])
     
     block_trials = read_trials(trial_file)
-    if(SEND_MARKERS):
-        # send_marker(stim_tracker, 'block_begin')
-        send_marker(stim_tracker, params['markers_codes']['block_begin'])
         
     for trial in block_trials:
         row = [subject_number, subject_name, subject_age, subject_sex, subject_handedness, date, condition, block_count+1, trial_count+1]
         sound = root_path+trial   
         
         # find stim stype         
-        if 'standard' in trial:
+        if 'neutral' in trial:
             stim_type = 'standard'
         else:
-            for deviant in params['deviants']: 
-                if deviant in os.path.basename(trial):
-                    stim_type = deviant
-        
-        
-        # send stim marker
-        stim_marker_code = params['markers_codes'][stim_type]
-        print('%s: '%stim_type, end='') 
-        if(SEND_MARKERS):
-            send_marker(stim_tracker, stim_marker_code) # EEG
+            stim_type = 'deviant'        
         
         # play sound
         print('file: %s:'%sound)  
