@@ -1,4 +1,4 @@
-Dans cette experience, vous allez entendre une alternance de sons comportant des "bips" ainsi que votre prenom.
-Veuillez compter mentalement le nombre de fois ou vous entendrez votre prenom.
+Dans cette experience, vous allez entendre une alternance de sons clairs/harmoniques ou rugueux/rauques
+Veuillez cliquer à chaque fois que vous entendez un son rugueux.
 
 (Appuyez sur une touche pour continuer)
