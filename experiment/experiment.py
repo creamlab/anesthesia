@@ -18,7 +18,7 @@ from math import ceil, floor
 import shutil
 import pyxid2
 
-def generate_trial_files(condition = 'music', subject_number=1, n_blocks=3, n_stims=400, n_stims_total=1200, deviant_proportion=0.2, initial_standard=10, minimum_standard = 1):
+def generate_trial_files(condition = 'music', subject_number=1, n_blocks=3, n_stims=400, n_stims_total=1200, deviant_proportion=0.2, initial_standards=10, minimum_standard = 1):
 # generates n_block trial files per subject
 # each block contains n_stim trials, randomized from folder which name is inferred from subject_number
 # returns an array of n_block file names
@@ -28,41 +28,42 @@ def generate_trial_files(condition = 'music', subject_number=1, n_blocks=3, n_st
     # glob all deviants and all standards files in stim folder
     stim_folder = root_path+'/sounds/%s'%(condition_folder)
 
-    deviant_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim+'/*_rough.wav')]
+    deviant_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim_folder+'/*_rough.wav')]
     n_deviants = len(deviant_files) 
+    print('deviants:'+ str(deviant_files))
 
-    standard_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim+'/*_neutral.wav')]
+    standard_files = ['sounds/%s/'%(condition_folder)+os.path.basename(x) for x in glob.glob(stim_folder+'/*_neutral.wav')]
     n_standards = len(standard_files) 
+    print('standards:'+str(standard_files))
 
     # generate list of deviants containing of n_total_stims * deviant_proportion stims
-    if (n_stims_total * deviant_proportion < n_deviants): # if we need less deviant than n_deviant, do nothing 
-        deviant_file_list = deviant_files
-    else: # duplicate the nb of deviants
-        deviant_file_list = deviant_files * (floor(n_stims_total* deviant_proportion/ n_deviants))
-    random.shuffle(deviant_file_list)
+    deviant_file_list = np.random.choice(deviant_files, floor(n_stims_total*deviant_proportion))
+    print('deviant list:'+str(deviant_file_list))
     
     # generate list of standards of same size as deviant_list
-    if (len(deviant_file_list) < n_standards): # if we need less standard than in deviant_file_list, take first n 
-        standard_file_list = standard_files[:len(deviant_file_list)]
-    else: # duplicate the nb of standards
-        standard_file_list = standard_files * (floor(len(deviant_file_list)/ n_standards))
-    random.shuffle(standard_file_list)
+    standard_file_list = np.random.choice(standard_files, len(deviant_file_list))
+    print('standard list:'+str(standard_file_list))
     
     # generate list of trials, with the constraint that each deviant is preceded by at least one standard
-
     stim_list = [ [std,dev] for std,dev in zip(standard_file_list,deviant_file_list) ] 
+    print('pairs:'+str(stim_list))
    
     # add the rest of standards (with the exception of the first initial_standards, to be added later)
     n_trials_so_far = len([trial for trial_pair in stim_list for trial in trial_pair])
-    if (n_stims_total > n_trials_so_far + initial_standard): 
-        stim_list += [ [std] for std in standard_file_list[:n_stims_total - n_trials_so_far - initial_standard] ] 
-   
-    # shuffle and flatten 
+    if (n_stims_total > n_trials_so_far + initial_standards): 
+        stim_list += [ [std] for std in np.random.choice(standard_file_list, n_stims_total - n_trials_so_far - initial_standards) ] 
+    print('w/ end:'+str(stim_list))
+
+    # shuffle
     random.shuffle(stim_list)
     
     # add beginning initial_standards
-    stim_list = [ [std] for std in standard_file_list[:initial_standard] ] + stim_list
+    stim_list = [ [std] for std in np.random.choice(standard_file_list, initial_standards) ] + stim_list
+    print('w/begin:'+str(stim_list))
+
+    # flatten
     stim_list = [trial for trial_pair in stim_list for trial in trial_pair]
+    print('flatten:'+str(stim_list))
     
     # write trials by blocks of n_stims
     trial_files = []
@@ -77,7 +78,7 @@ def generate_trial_files(condition = 'music', subject_number=1, n_blocks=3, n_st
             # write trials of the block
             for item in block: 
                 writer.writerow([item])
-    return trial_files, standard_file
+    return trial_files
         
 def blockify(x,n_stims):
     # generator to cut a signal into non-overlapping frames
@@ -88,7 +89,7 @@ def blockify(x,n_stims):
         yield (x[start:end],i)
     if (end < len(x)): 
         yield (x[end:len(x)],i+1)  
-
+    
 def read_trials(trial_file): 
 # read all trials in a block of trial, stored as a CSV trial file
     with open(trial_file, 'r') as fid:
@@ -102,7 +103,7 @@ def generate_result_file(condition, subject_number):
     condition_folder = PARAMS[condition]['folder']
 
     result_file = root_path+'results/%s/results_subj%d'%(condition_folder,subject_number)+ '_condition_' +condition +'_'+date.strftime('%y%m%d_%H.%M')+'.csv'        
-    result_headers = ['subject_number','subject_name','sex','age','handedness','date','condition','block_number','trial_number','sound_file','stim_type','stim_marker_code']
+    result_headers = ['subject_number','sex','age','handedness','date','condition','block_number','trial_number','sound_file','stim_type','stim_marker_code']
     with open(result_file, 'w+') as file:
         writer = csv.writer(file)
         writer.writerow(result_headers)
@@ -161,9 +162,10 @@ def play_sound(sound):
 ###########################################################################################
 
 root_path = './' 
-N_STIMS_TOTAL = 1200 # total nb of stimuli (dev + std)
+N_STIMS_TOTAL = 25 # total nb of stimuli (dev + std)
 DEVIANT_PROPORTION = 0.2
 N_BLOCKS = 1
+INITIAL_STANDARDS = 5
 ISI = .6 # in sec
 JITTER = .05 # in sec.
 
@@ -182,11 +184,10 @@ PARAMS = {'voice':VOICE_PARAMS,
 
 
 # get participant nb, age, sex 
-subject_info = {u'number':1, u'name':'Bobby', u'age':20, u'sex': u'f/m', u'handedness':'right', u'condition': u'smile/rise'}
+subject_info = {u'number':1, u'age':20, u'sex': u'f/m', u'handedness':'right', u'condition': u'voice/music'}
 dlg = gui.DlgFromDict(subject_info, title=u'Own-name')
 if dlg.OK:
     subject_number = subject_info[u'number']
-    subject_name = subject_info[u'name']
     subject_age = subject_info[u'age']
     subject_sex = subject_info[u'sex']  
     subject_handedness = subject_info[u'handedness'] 
@@ -207,12 +208,15 @@ win = visual.Window(np.array([1920,1080]),fullscr=False,color='black', units='no
 # generate data files
 result_file = generate_result_file(condition, subject_number) # renvoie 1 filename en csv
 n_stims = round(N_STIMS_TOTAL/N_BLOCKS) # nb trials per block
-trial_files, standard_file = generate_trial_files(condition=condition,
+trial_files = generate_trial_files(condition=condition,
                                                 subject_number=subject_number,
                                                 n_blocks=N_BLOCKS,
                                                 n_stims=round(N_STIMS_TOTAL/N_BLOCKS),
                                                 n_stims_total=N_STIMS_TOTAL,
-                                                deviant_proportion=DEVIANT_PROPORTION) 
+                                                deviant_proportion=DEVIANT_PROPORTION,
+                                                initial_standards=INITIAL_STANDARDS) 
+
+print('trials:'+str(trial_files))
 
 # start_experiment 
 show_text_and_wait(file_name=root_path+'intro.txt')
@@ -225,7 +229,7 @@ for block_count, trial_file in enumerate(trial_files):
     block_trials = read_trials(trial_file)
         
     for trial in block_trials:
-        row = [subject_number, subject_name, subject_age, subject_sex, subject_handedness, date, condition, block_count+1, trial_count+1]
+        row = [subject_number, subject_age, subject_sex, subject_handedness, date, condition, block_count+1, trial_count+1]
         sound = root_path+trial   
         
         # find stim stype         
@@ -244,7 +248,7 @@ for block_count, trial_file in enumerate(trial_files):
         # log trial in result_file
         with open(result_file, 'a') as file:
             writer = csv.writer(file,lineterminator='\n')
-            result = row + [trial,stim_type,stim_marker_code]
+            result = row + [trial,stim_type]
             writer.writerow(result)
             
         trial_count += 1
