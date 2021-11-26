@@ -1,0 +1,26 @@
+subject_number,sex,age,handedness,date,condition,block_number,trial_number,sound_file,stim_type,stim_marker_code
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,1,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,2,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,3,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,4,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,5,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,6,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,7,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,8,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,9,sounds/voice/M1a_pitch1_rough.wav,deviant
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,10,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,11,sounds/voice/F1a_pitch1_rough.wav,deviant
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,12,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,13,sounds/voice/M1a_pitch1_rough.wav,deviant
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,14,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,15,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,16,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,17,sounds/voice/F1i_pitch1_rough.wav,deviant
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,18,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,19,sounds/voice/F1i_pitch1_rough.wav,deviant
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,20,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,21,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,22,sounds/voice/F1a_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,23,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,24,sounds/voice/F1i_pitch1_neutral.wav,standard
+1,20,f/m,right,2021-11-26 06:57:08.440786,voice,1,25,sounds/voice/F1i_pitch1_neutral.wav,standard
